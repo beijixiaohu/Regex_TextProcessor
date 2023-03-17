@@ -11,7 +11,7 @@
 
 依赖管理：Maven
 
-JavaSE版本：18
+JRE版本：18、最低版本要求：14
 
 IDE：IDEA
 

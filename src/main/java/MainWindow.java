@@ -118,9 +118,9 @@ public class MainWindow {
 
         // 关于按钮
         JMenuItem aboutMenuItem = new JMenuItem("关于");
-        aboutMenuItem.addActionListener(e -> JOptionPane.showMessageDialog(null, "文本正则处理器 v1.0\n@北极小狐 www.dorkyfox.com", "关于", JOptionPane.INFORMATION_MESSAGE));
+        aboutMenuItem.addActionListener(e -> JOptionPane.showMessageDialog(frame, "文本正则处理器 v1.0\n@北极小狐 www.dorkyfox.com", "关于", JOptionPane.INFORMATION_MESSAGE));
         JMenuItem explainMenuItem = new JMenuItem("说明");
-        explainMenuItem.addActionListener(e -> JOptionPane.showMessageDialog(null, """
+        explainMenuItem.addActionListener(e -> JOptionPane.showMessageDialog(frame, """
                         工作流程：
                         轮询 替换规则管理页面 中的规则：
                         程序会按照正则表达式对打开的文本自动 逐行 进行匹配替换，

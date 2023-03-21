@@ -4,7 +4,6 @@ import javax.swing.table.TableColumnModel;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.IOException;
 import java.util.List;
 
 /**
@@ -13,10 +12,6 @@ import java.util.List;
  * @author beijixiaohu
  */
 public class RuleDialog extends JDialog {
-    /**
-     * 当前的所有规则列表。
-     */
-    private final List<Rule> Rules;
     /**
      * 匹配规则表格。
      */
@@ -34,7 +29,6 @@ public class RuleDialog extends JDialog {
      */
     public RuleDialog(JFrame parent, List<Rule> Rules) {
         super(parent, "替换规则管理", true);
-        this.Rules = Rules;
 
         // 创建上下左右布局的面板
         JPanel panel = new JPanel(new BorderLayout());
@@ -46,7 +40,6 @@ public class RuleDialog extends JDialog {
         label.setHorizontalAlignment(SwingConstants.CENTER);
         // 添加文本标签到主面板中
         panel.add(label, BorderLayout.NORTH);
-
 
         // 表头
         String[] columnNames = {"启用", "正则表达式", "替换字符串", "备注"};
@@ -67,6 +60,8 @@ public class RuleDialog extends JDialog {
             }
         };
         RuleTable = new JTable(tableModel);
+        RuleTable.setShowHorizontalLines(true);
+        RuleTable.setShowVerticalLines(true);
         JScrollPane tableScrollPane = new JScrollPane(RuleTable);
 
         // 设置表格列宽

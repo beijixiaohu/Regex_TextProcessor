@@ -63,7 +63,7 @@ public class MainWindow {
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         // 窗口图标
-        ImageIcon icon = new ImageIcon(workingDir+"/src/main/resources/icon.png"); // 创建图标对象
+        ImageIcon icon = new ImageIcon(workingDir + "/src/main/resources/icon.png"); // 创建图标对象
         frame.setIconImage(icon.getImage()); // 将图标对象设置为窗口的图标
 
         // 创建菜单栏及菜单项，并添加到主窗口中
@@ -74,6 +74,8 @@ public class MainWindow {
 
         // 替换规则管理按钮
         JMenuItem manageMenuItem = new JMenuItem("替换规则");
+        manageMenuItem.setHorizontalTextPosition(SwingConstants.LEFT);
+        manageMenuItem.setPreferredSize(new Dimension(75, 30));
 
         // 添加管理规则按钮的事件监听器
         manageMenuItem.addActionListener(e -> {
@@ -93,7 +95,8 @@ public class MainWindow {
 
         // 忽略规则管理按钮
         JMenuItem ExMenuItem = new JMenuItem("忽略规则");
-
+        ExMenuItem.setHorizontalTextPosition(SwingConstants.LEFT);
+        ExMenuItem.setPreferredSize(new Dimension(75, 30));
         // 添加忽略按钮的事件监听器
         ExMenuItem.addActionListener(e -> {
             try {
@@ -118,8 +121,12 @@ public class MainWindow {
 
         // 关于按钮
         JMenuItem aboutMenuItem = new JMenuItem("关于");
-        aboutMenuItem.addActionListener(e -> JOptionPane.showMessageDialog(frame, "文本正则处理器 v1.0\n@北极小狐 www.dorkyfox.com", "关于", JOptionPane.INFORMATION_MESSAGE));
+        aboutMenuItem.setHorizontalTextPosition(SwingConstants.LEFT);
+        aboutMenuItem.setPreferredSize(new Dimension(45, 30));
+        aboutMenuItem.addActionListener(e -> JOptionPane.showMessageDialog(frame, "文本正则处理器 v1.1\n@北极小狐 www.dorkyfox.com", "关于", JOptionPane.INFORMATION_MESSAGE));
         JMenuItem explainMenuItem = new JMenuItem("说明");
+        explainMenuItem.setHorizontalTextPosition(SwingConstants.LEFT);
+        explainMenuItem.setPreferredSize(new Dimension(45, 30));
         explainMenuItem.addActionListener(e -> JOptionPane.showMessageDialog(frame, """
                         工作流程：
                         轮询 替换规则管理页面 中的规则：
@@ -149,7 +156,7 @@ public class MainWindow {
                 =====================运行日志======================
                 支持处理所有的纯文本格式文档，包括txt、md、json等，
                 不支持二进制文档，比如word、pdf等
-                
+                                
                 点击打开文件，选择文件并确定后会立即执行替换，
                 请注意备份文件！！！！！！！！
                 更多说明请点击 帮助-说明
@@ -270,10 +277,7 @@ public class MainWindow {
             JSONArray jsonArray = new JSONArray(sb.toString());
             for (int i = 0; i < jsonArray.length(); i++) {
                 JSONObject ExRule = jsonArray.getJSONObject(i);
-                Boolean isOpen = ExRule.getBoolean("isOpen");
-                String regex = ExRule.getString("regex");
-                String note = ExRule.getString("note");
-                Ex rule = new Ex(isOpen, regex, note);
+                Ex rule = new Ex(ExRule.getBoolean("isOpen"), ExRule.getString("regex"), ExRule.getString("note"));
                 ExRules.add(rule);
             }
         } catch (JSONException e) {

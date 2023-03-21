@@ -45,13 +45,16 @@ public class ExRuleDialog extends JDialog {
             }
         };
         ExRuleTable = new JTable(tableModel);
+        ExRuleTable.setShowHorizontalLines(true);
+        ExRuleTable.setShowVerticalLines(true);
         JScrollPane tableScrollPane = new JScrollPane(ExRuleTable);
 
         // 设置表格列宽
+        ExRuleTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
         TableColumnModel columnModel = ExRuleTable.getColumnModel();
         columnModel.getColumn(0).setPreferredWidth(50);
-        columnModel.getColumn(1).setPreferredWidth(400);
-        columnModel.getColumn(2).setPreferredWidth(200);
+        columnModel.getColumn(1).setPreferredWidth(600);
+        columnModel.getColumn(2).setPreferredWidth(230);
 
         // 加载文件中的忽略规则到表格中
         for (Ex rule : ExRules) {

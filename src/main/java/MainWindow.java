@@ -13,6 +13,10 @@ import org.json.JSONObject;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.dnd.DnDConstants;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.DropTargetDropEvent;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -122,22 +126,13 @@ public class MainWindow {
         // 关于按钮
         JMenuItem aboutMenuItem = new JMenuItem("关于");
         aboutMenuItem.setHorizontalTextPosition(SwingConstants.LEFT);
-        aboutMenuItem.setPreferredSize(new Dimension(45, 30));
-        aboutMenuItem.addActionListener(e -> JOptionPane.showMessageDialog(frame, "文本正则处理器 v1.1\n@北极小狐 www.dorkyfox.com", "关于", JOptionPane.INFORMATION_MESSAGE));
+        aboutMenuItem.setPreferredSize(new Dimension(50, 30));
+        aboutMenuItem.addActionListener(e -> JOptionPane.showMessageDialog(frame, "文本正则处理器 v1.2\n@北极小狐 www.dorkyfox.com", "关于", JOptionPane.INFORMATION_MESSAGE));
         JMenuItem explainMenuItem = new JMenuItem("说明");
         explainMenuItem.setHorizontalTextPosition(SwingConstants.LEFT);
-        explainMenuItem.setPreferredSize(new Dimension(45, 30));
-        explainMenuItem.addActionListener(e -> JOptionPane.showMessageDialog(frame, """
-                        工作流程：
-                        轮询 替换规则管理页面 中的规则：
-                        程序会按照正则表达式对打开的文本自动 逐行 进行匹配替换，
-                        替换前会首先检查该行是否符合 忽略规则管理页面 中的某一条规则
-                        如果符合则跳过这一行不做任何处理
-                        实现原理：
-                        正则表达式中的值会传递给replaceAll方法的第一个参数；
-                        替换字符串中的值会传递给给replaceAll方法的第二个参数
-                        因此只需要符合Java中的正则语法即可，包括分组，前后断言等等""",
-                "关于", JOptionPane.INFORMATION_MESSAGE));
+        explainMenuItem.setPreferredSize(new Dimension(50, 30));
+        explainMenuItem.addActionListener(e -> JOptionPane.showMessageDialog(frame, "<html><body style='font-size:10px;'><p><strong>工作流程：</strong></p><p>轮询 替换规则管理页面 中的规则：</p><p>程序会按照正则表达式对打开的文本自动 逐行 进行匹配替换，</p><p>替换前会首先检查该行是否符合 忽略规则管理页面 中的某一条规则</p><p>如果符合则跳过这一行不做任何处理</p><p><strong>实现原理：</strong></p><p>正则表达式中的值会传递给replaceAll方法的第一个参数；</p><p>替换字符串中的值会传递给给replaceAll方法的第二个参数</p><p>因此只需要符合Java中的正则语法即可，包括分组，前后断言等等</p></body></html>",
+                "说明", JOptionPane.QUESTION_MESSAGE));
         helpMenu.add(explainMenuItem);
         helpMenu.add(aboutMenuItem);
 
@@ -149,7 +144,9 @@ public class MainWindow {
         // 日志框和滚动条
         JTextArea logArea = new JTextArea();
         logArea.setEditable(false);
+        logArea.setBackground(Color.WHITE);
         JScrollPane logScrollPane = new JScrollPane(logArea);
+        logScrollPane.setBorder(null);
 
         // 初始日志
         logArea.append("""
@@ -157,34 +154,46 @@ public class MainWindow {
                 支持处理所有的纯文本格式文档，包括txt、md、json等，
                 不支持二进制文档，比如word、pdf等
                                 
-                点击打开文件，选择文件并确定后会立即执行替换，
                 请注意备份文件！！！！！！！！
                 更多说明请点击 帮助-说明
                 =================================================
                 """);
 
-        // 打开文件按钮
-        JButton openButton = new JButton("打开文件");
-
+        
         // 创建控制面板
         JPanel controlPanel = new JPanel();
-        controlPanel.setLayout(new FlowLayout(FlowLayout.LEFT));
-        controlPanel.add(openButton);
+        controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
+        controlPanel.setPreferredSize(new Dimension(200, 75));
+        controlPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 1, 0, Color.lightGray));
+        JLabel dragLabel = new JLabel("<html><font style='font: bold 14px/1.6em 宋体, 微软雅黑; color: black;'>将文件拖拽到这里…</font></html>");
+        dragLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        dragLabel.setAlignmentY(Component.CENTER_ALIGNMENT);
+        dragLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        controlPanel.add(Box.createVerticalGlue());
+        controlPanel.add(dragLabel);
+        controlPanel.add(Box.createVerticalGlue());
 
         // 将日志框和控制面板添加到主窗口中
         frame.getContentPane().setLayout(new BorderLayout());
         frame.getContentPane().add(controlPanel, BorderLayout.NORTH);
         frame.getContentPane().add(logScrollPane, BorderLayout.CENTER);
 
-        // 打开文件按钮的事件监听器
-        openButton.addActionListener(e -> {
-            // 创建并显示文件选择对话框
-            JFileChooser fileChooser = new JFileChooser();
-            int result = fileChooser.showOpenDialog(frame);
-
-            if (result == JFileChooser.APPROVE_OPTION) {
-                String filePath = fileChooser.getSelectedFile().getPath();
-                readAndReplace(filePath, logArea);
+        // 添加拖拽文件功能
+        frame.getContentPane().setDropTarget(new DropTarget() {
+            public synchronized void drop(DropTargetDropEvent evt) {
+                try {
+                    evt.acceptDrop(DnDConstants.ACTION_COPY);
+                    List<File> droppedFiles = (List<File>) evt.getTransferable().getTransferData(DataFlavor.javaFileListFlavor);
+                    if (droppedFiles.size() > 0) {
+                        String filePath = droppedFiles.get(0).getPath();
+                        int dialogResult = JOptionPane.showConfirmDialog(frame, "是否确认要执行？", "确认", JOptionPane.YES_NO_OPTION);
+                        if (dialogResult == JOptionPane.YES_OPTION) {
+                            readAndReplace(filePath, logArea);
+                        }
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
             }
         });
 
@@ -350,7 +359,7 @@ public class MainWindow {
                         if (!replacedLine.equals(line)) {
                             // 记录日志
                             int lineNumber = replaced.length() - replaced.toString().replace("\n", "").length() + 1;
-                            logArea.append("第" + lineNumber + "行：" + "\n" + "替换规则备注：" + rule.note() + "\n" + line + " -> " + replacedLine + "\n");
+                            logArea.append("第" + lineNumber + "行：" + "\n" + "替换规则备注：" + rule.note() + "\n" + line + " -> " + replacedLine + "\n\n");
                         }
                         line = replacedLine;
                     }

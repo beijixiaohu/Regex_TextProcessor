@@ -8,4 +8,20 @@
  */
 record Rule(String regex, String replacement, boolean isOpen, String note) {
 
+    public String getRegex() {
+        return regex;
+    }
+
+    public String getReplacement() {
+        return replacement;
+    }
+
+    public boolean isOpen() {
+        return isOpen;
+    }
+
+    public String getNote() {
+        return note;
+    }
+
 }

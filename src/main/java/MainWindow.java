@@ -7,9 +7,6 @@
  */
 
 import com.formdev.flatlaf.FlatLightLaf;
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import javax.swing.*;
 import java.awt.*;
@@ -17,13 +14,10 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.dnd.DnDConstants;
 import java.awt.dnd.DropTarget;
 import java.awt.dnd.DropTargetDropEvent;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
@@ -33,23 +27,6 @@ public class MainWindow {
      * 当前工作目录路径
      */
     static String workingDir = System.getProperty("user.dir");
-    /**
-     * 替换规则列表文件路径
-     */
-    private static final String RULE_FILE_PATH = workingDir + "/src/main/resources/rules.json";
-    /**
-     * 替换规则列表文件路径的Path对象
-     */
-    static Path path = Paths.get(RULE_FILE_PATH);
-    /**
-     * 忽略规则列表文件路径
-     */
-    private static final String IGNORE_RULE_FILE_PATH = workingDir + "/src/main/resources/ex.json";
-
-    /**
-     * 忽略规则列表文件路径的Path对象
-     */
-    static Path ExPath = Paths.get(IGNORE_RULE_FILE_PATH);
 
     /**
      * 应用程序的入口点
@@ -84,13 +61,12 @@ public class MainWindow {
         // 添加管理规则按钮的事件监听器
         manageMenuItem.addActionListener(e -> {
             try {
-                List<Rule> Rules = readRules();
+                List<Rule> Rules = FileHandler.readRules();
                 // 显示规则管理界面
                 RuleDialog dialog = new RuleDialog(frame, Rules);
                 dialog.setSize(900, 450);
                 dialog.setLocationRelativeTo(null);
                 dialog.setVisible(true);
-
             } catch (IOException ex) {
                 ex.printStackTrace();
                 JOptionPane.showMessageDialog(null, "读取/保存替换规则文件失败", "错误", JOptionPane.ERROR_MESSAGE);
@@ -104,7 +80,7 @@ public class MainWindow {
         // 添加忽略按钮的事件监听器
         ExMenuItem.addActionListener(e -> {
             try {
-                List<Ex> ExRules = readExRules();
+                List<Ex> ExRules = FileHandler.readExRules();
                 // 显示忽略规则管理界面
                 ExRuleDialog dialog = new ExRuleDialog(frame, ExRules);
                 dialog.setSize(900, 450);
@@ -127,7 +103,7 @@ public class MainWindow {
         JMenuItem aboutMenuItem = new JMenuItem("关于");
         aboutMenuItem.setHorizontalTextPosition(SwingConstants.LEFT);
         aboutMenuItem.setPreferredSize(new Dimension(50, 30));
-        aboutMenuItem.addActionListener(e -> JOptionPane.showMessageDialog(frame, "文本正则处理器 v1.2\n@北极小狐 www.dorkyfox.com", "关于", JOptionPane.INFORMATION_MESSAGE));
+        aboutMenuItem.addActionListener(e -> JOptionPane.showMessageDialog(frame, "文本正则处理器 v1.3\n@北极小狐 www.dorkyfox.com", "关于", JOptionPane.INFORMATION_MESSAGE));
         JMenuItem explainMenuItem = new JMenuItem("说明");
         explainMenuItem.setHorizontalTextPosition(SwingConstants.LEFT);
         explainMenuItem.setPreferredSize(new Dimension(50, 30));
@@ -136,9 +112,33 @@ public class MainWindow {
         helpMenu.add(explainMenuItem);
         helpMenu.add(aboutMenuItem);
 
+        // “云同步”菜单
+        JMenu LoginMenu = new JMenu("云同步");
+
+        // 登录按钮
+        JMenuItem loginMenuItem = new JMenuItem("登录");
+        loginMenuItem.setHorizontalTextPosition(SwingConstants.LEFT);
+        loginMenuItem.setPreferredSize(new Dimension(100, 30));
+        loginMenuItem.setHorizontalAlignment(SwingConstants.LEFT);
+
+        // 添加登录按钮的事件监听器
+        loginMenuItem.addActionListener(e -> {
+            // 创建LoginDialog对象
+            LoginDialog loginDialog = new LoginDialog(frame);
+            loginDialog.setSize(300, 200);
+            loginDialog.setLocationRelativeTo(null);
+            loginDialog.setVisible(true);
+        });
+
+        // 将登录按钮添加到云同步菜单中
+        LoginMenu.add(loginMenuItem);
+        LoginMenu.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+
         // 将菜单添加到菜单栏中，将菜单栏添加到主窗口中
         menuBar.add(ruleMenu);
         menuBar.add(helpMenu);
+        menuBar.add(LoginMenu);
         frame.setJMenuBar(menuBar);
 
         // 日志框和滚动条
@@ -159,7 +159,43 @@ public class MainWindow {
                 =================================================
                 """);
 
-        
+        // 自动登录与同步配置
+        List<User> users = new ArrayList<>();
+        try {
+            users = FileHandler.readUser();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if(users.size()>0){
+            MysqlConn sqlconn = new MysqlConn();
+            if(sqlconn.getUserID()!=0){
+                User user = users.get(users.size()-1);
+                loginMenuItem.setText("当前账户：" + user.username());
+
+                // 退出账号
+                JMenuItem logoutMenuItem = new JMenuItem("退出");
+                logoutMenuItem.setHorizontalTextPosition(SwingConstants.LEFT);
+                logoutMenuItem.setPreferredSize(new Dimension(100, 30));
+                logoutMenuItem.addActionListener(e -> {
+                    try {
+                        FileHandler.eraserUser();
+                        loginMenuItem.setText("登录");
+                        FileHandler.eraserRules();
+                        FileHandler.eraserExRules();
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                        JOptionPane.showMessageDialog(null, "退出登录失败", "错误", JOptionPane.ERROR_MESSAGE);
+                    }
+                });
+                LoginMenu.add(logoutMenuItem);
+                sqlconn.syncDataToLocal();
+                sqlconn.syncDataToDB();
+                sqlconn.syncExDataToLocal();
+                sqlconn.syncExDataToDB();
+                sqlconn.closeConnections();
+            }
+        }
+
         // 创建控制面板
         JPanel controlPanel = new JPanel();
         controlPanel.setLayout(new BoxLayout(controlPanel, BoxLayout.Y_AXIS));
@@ -202,131 +238,14 @@ public class MainWindow {
     }
 
     /**
-     * 从rules.json文件中读取替换规则
-     *
-     * @return 替换规则列表
-     * @throws IOException   如果读取规则文件失败
-     * @throws JSONException 如果规则文件格式错误
-     */
-    private static List<Rule> readRules() throws IOException {
-        // 如果rules.json文件不存在，则创建
-        if (!Files.exists(path)) {
-            File file = new File(RULE_FILE_PATH);
-            file.getParentFile().mkdirs();
-            file.createNewFile();
-        }
-        List<Rule> rules = new ArrayList<>();
-        try (BufferedReader reader = Files.newBufferedReader(Paths.get(RULE_FILE_PATH))) {
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                sb.append(line);
-            }
-            JSONArray jsonArray = new JSONArray(sb.toString());
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject jsonObject = jsonArray.getJSONObject(i);
-                String regex = jsonObject.getString("regex");
-                String replacement = jsonObject.getString("replacement");
-                boolean isOpen = jsonObject.getBoolean("isOpen");
-                String note = jsonObject.getString("note");
-                Rule rule = new Rule(regex, replacement, isOpen, note);
-                rules.add(rule);
-            }
-        } catch (JSONException e) {
-            // 如果rules.json是空白的，则其会解析错误，这是正常的，捕获异常不做处理即可
-        }
-        return rules;
-    }
-
-    /**
-     * 将替换规则列表写入rules.json文件
-     *
-     * @param rules 替换规则列表
-     * @throws IOException 如果保存规则文件失败
-     */
-    static void writeRules(List<Rule> rules) {
-        JSONArray jsonArray = new JSONArray();
-        for (Rule rule : rules) {
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.put("regex", rule.regex());
-            jsonObject.put("replacement", rule.replacement());
-            jsonObject.put("isOpen", rule.isOpen());
-            jsonObject.put("note", rule.note());
-            jsonArray.put(jsonObject);
-        }
-        try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(RULE_FILE_PATH))) {
-            writer.write(jsonArray.toString());
-        } catch (IOException e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(null, "保存规则失败", "错误", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    /**
-     * 从ex.json文件中读取忽略规则列表
-     *
-     * @return 忽略规则列表
-     * @throws IOException   如果读取忽略规则文件失败
-     * @throws JSONException 如果忽略规则文件格式错误
-     */
-    private static List<Ex> readExRules() throws IOException {
-        // 如果ex.json文件不存在，则创建
-        if (!Files.exists(ExPath)) {
-            File file = new File(IGNORE_RULE_FILE_PATH);
-            file.getParentFile().mkdirs();
-            file.createNewFile();
-        }
-        List<Ex> ExRules = new ArrayList<>();
-        try (BufferedReader reader = Files.newBufferedReader(ExPath)) {
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                sb.append(line);
-            }
-            JSONArray jsonArray = new JSONArray(sb.toString());
-            for (int i = 0; i < jsonArray.length(); i++) {
-                JSONObject ExRule = jsonArray.getJSONObject(i);
-                Ex rule = new Ex(ExRule.getBoolean("isOpen"), ExRule.getString("regex"), ExRule.getString("note"));
-                ExRules.add(rule);
-            }
-        } catch (JSONException e) {
-            // 如果ex.json是空白的，则其会解析错误，这是正常的，捕获异常不做处理即可
-        }
-        return ExRules;
-    }
-
-    /**
-     * 将忽略规则列表写入ex.json文件
-     *
-     * @param rules 规则
-     */
-    static void writeExRules(List<Ex> rules) throws IOException {
-        JSONArray jsonArray = new JSONArray();
-        for (Ex rule : rules) {
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.put("isOpen", rule.isOpen());
-            jsonObject.put("regex", rule.regex());
-            jsonObject.put("note", rule.note());
-            jsonArray.put(jsonObject);
-        }
-        try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(IGNORE_RULE_FILE_PATH))) {
-            writer.write(jsonArray.toString());
-        } catch (IOException e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(null, "保存规则失败", "错误", JOptionPane.ERROR_MESSAGE);
-        }
-    }
-
-    /**
-     * 从指定文件中读取文本，按照规则进行替换，并将结果原路保存，同时输出替换记录到日志框中
+     * 读取替换：从指定文件中读取文本，按照规则进行替换，并将结果原路保存，同时输出替换记录到日志框中
      *
      * @param filePath 文件路径
      * @param logArea  日志
      */
     private static void readAndReplace(String filePath, JTextArea logArea) {
         try {
-            String content = Files.readString(Path.of(filePath));
-            List<Ex> ExRules = readExRules();
+            List<Ex> ExRules = FileHandler.readExRules();
 
             // 处理md文件
             String mdContent = Files.readString(Path.of(filePath));
@@ -352,7 +271,7 @@ public class MainWindow {
                 }
 
                 // 对该行内容进行替换操作
-                for (Rule rule : readRules()) {
+                for (Rule rule : FileHandler.readRules()) {
                     if (rule.isOpen()) {
                         Pattern pattern = Pattern.compile(rule.regex());
                         String replacedLine = line.replaceAll(pattern.pattern(), rule.replacement());

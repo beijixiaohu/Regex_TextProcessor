@@ -1,1 +1,1 @@
-[{"note":"忽略图片标签","regex":"<img","isOpen":true}]
+[{"note":"图片忽略","regex":"<img","isOpen":true}]

@@ -109,12 +109,17 @@ public class RuleDialog extends JDialog {
             public void windowClosing(WindowEvent e) {
                 List<Rule> newRules = getRulesFromTableModel(tableModel);
                 // 保存忽略规则到rules.json文件中
-                MainWindow.writeRules(newRules);
+                FileHandler.writeRules(newRules);
                 Rules.clear();
+                // 同步到数据库
+                MysqlConn sqlconn = new MysqlConn();
+                sqlconn.syncDataToDB();
+                sqlconn.syncDataToLocal();
+                sqlconn.closeConnections();
+                
                 RuleDialog.this.dispose();
             }
         });
-
         pack();
         setLocationRelativeTo(parent);
     }

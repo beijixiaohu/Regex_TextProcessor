@@ -27,7 +27,7 @@ public class ExRuleDialog extends JDialog {
         panel.add(label, BorderLayout.NORTH);
 
         // 表头
-        String[] columnNames = {"启用", "正则表达式", "备注"};
+        String[] columnNames = { "启用", "正则表达式", "备注" };
         // 创建忽略规则表格及其模型
         tableModel = new DefaultTableModel(null, columnNames) {
             @Override
@@ -58,14 +58,14 @@ public class ExRuleDialog extends JDialog {
 
         // 加载文件中的忽略规则到表格中
         for (Ex rule : ExRules) {
-            Object[] rowData = {rule.isOpen(), rule.regex(), rule.note()};
+            Object[] rowData = { rule.isOpen(), rule.regex(), rule.note() };
             tableModel.addRow(rowData);
         }
 
         // 创建添加和删除按钮，并为它们添加事件监听器
         JButton addButton = new JButton("添加");
         addButton.addActionListener(e -> {
-            Object[] rowData = {true, "", ""};
+            Object[] rowData = { true, "", "" };
             tableModel.addRow(rowData);
         });
 
@@ -94,12 +94,14 @@ public class ExRuleDialog extends JDialog {
             public void windowClosing(WindowEvent e) {
                 List<Ex> newExRules = getExRulesFromTableModel();
                 // 保存忽略规则到ex.json文件中
-                try {
-                    MainWindow.writeExRules(newExRules);
-                } catch (IOException ex) {
-                    throw new RuntimeException(ex);
-                }
+                FileHandler.writeExRules(newExRules);
                 ExRules.clear();
+                
+                MysqlConn sqlconn = new MysqlConn();
+                sqlconn.syncExDataToDB();
+                sqlconn.syncExDataToLocal();
+                sqlconn.closeConnections();
+
                 dispose();
             }
         });

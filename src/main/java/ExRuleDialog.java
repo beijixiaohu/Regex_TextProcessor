@@ -97,7 +97,7 @@ public class ExRuleDialog extends JDialog {
                 FileHandler.writeExRules(newExRules);
                 ExRules.clear();
                 
-                SqlServerConn sqlconn = new SqlServerConn();
+                MysqlConn sqlconn = new MysqlConn();
                 sqlconn.syncExDataToDB();
                 sqlconn.syncExDataToLocal();
                 sqlconn.closeConnections();

@@ -112,7 +112,7 @@ public class RuleDialog extends JDialog {
                 FileHandler.writeRules(newRules);
                 Rules.clear();
                 // 同步到数据库
-                SqlServerConn sqlconn = new SqlServerConn();
+                MysqlConn sqlconn = new MysqlConn();
                 sqlconn.syncDataToDB();
                 sqlconn.syncDataToLocal();
                 sqlconn.closeConnections();

@@ -167,7 +167,7 @@ public class MainWindow {
             e.printStackTrace();
         }
         if(users.size()>0){
-            SqlServerConn sqlconn = new SqlServerConn();
+            MysqlConn sqlconn = new MysqlConn();
             if(sqlconn.getUserID()!=0){
                 User user = users.get(users.size()-1);
                 loginMenuItem.setText("当前账户：" + user.username());

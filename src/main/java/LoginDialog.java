@@ -46,8 +46,8 @@ public class LoginDialog extends JDialog {
         JButton saveButton = new JButton("登录");
         JButton registerButton = new JButton("注册");
 
-        saveButton.addActionListener(new SaveButtonListener(users, userText, passwordText, parent));
-        registerButton.addActionListener(new RegisterButtonListener(users, userText, passwordText, parent));
+        saveButton.addActionListener(new SaveButtonListener(users, userText, passwordText, parent, this));
+        registerButton.addActionListener(new RegisterButtonListener(users, userText, passwordText, parent,this));
         panel.add(saveButton);
         panel.add(registerButton);
         this.add(panel);
@@ -57,25 +57,33 @@ public class LoginDialog extends JDialog {
     }
 
     private class SaveButtonListener implements ActionListener {
+        private final JFrame m;
         private List<User> users;
         private JTextField userText;
         private JTextField passwordText;
-        private JFrame parent;
+        private LoginDialog parent;
 
-        public SaveButtonListener(List<User> users, JTextField userText, JTextField passwordText, JFrame parent) {
+        public SaveButtonListener(List<User> users, JTextField userText, JTextField passwordText, JFrame m, LoginDialog parent) {
             this.users = users;
             this.userText = userText;
             this.passwordText = passwordText;
             this.parent = parent;
+            this.m = m;
         }
 
         public void actionPerformed(ActionEvent event) {
             User user = new User(userText.getText(), passwordText.getText());
             users.add(user);
             FileHandler.writeUser(users);
-            SqlServerConn sqlconn = new SqlServerConn();
+            MysqlConn sqlconn = new MysqlConn();
             if(sqlconn.getUserID()==0){
                 JOptionPane.showMessageDialog(null, "账号或密码错误");
+                parent.dispose();
+                try {
+                    FileHandler.eraserUser();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }else{
                 dispose();
                 sqlconn.syncDataToLocal();
@@ -83,7 +91,7 @@ public class LoginDialog extends JDialog {
                 sqlconn.syncExDataToLocal();
                 sqlconn.syncExDataToDB();
                 String username = userText.getText(); //获取当前登录的账号名
-                parent.getJMenuBar().getMenu(2).getItem(0).setText("当前账户：" + username); //将LoginMenu中的loginMenuItem改为当前登录的账号名
+                m.getJMenuBar().getMenu(2).getItem(0).setText("当前账户：" + username); //将LoginMenu中的loginMenuItem改为当前登录的账号名
             }
         }
     }
@@ -92,9 +100,9 @@ public class LoginDialog extends JDialog {
         private List<User> users;
         private JTextField userText;
         private JTextField passwordText;
-        private JFrame parent;
+        private LoginDialog parent;
 
-        public RegisterButtonListener(List<User> users, JTextField userText, JTextField passwordText, JFrame parent) {
+        public RegisterButtonListener(List<User> users, JTextField userText, JTextField passwordText, JFrame m, LoginDialog parent) {
             this.users = users;
             this.userText = userText;
             this.passwordText = passwordText;
@@ -102,7 +110,7 @@ public class LoginDialog extends JDialog {
         }
 
         public void actionPerformed(ActionEvent event) {
-            SqlServerConn sqlconn = new SqlServerConn();
+            MysqlConn sqlconn = new MysqlConn();
             sqlconn.registerUser(userText.getText(), passwordText.getText());
             sqlconn.closeConnections();        
             JOptionPane.showMessageDialog(null, "注册成功");
